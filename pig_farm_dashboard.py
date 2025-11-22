@@ -393,7 +393,7 @@ class CasaDeFoAnalyzer:
             'Category': ['A1', 'A2', 'A3','A4', 'Batch B (20)'],
             'Daily_Consumption_kg': [2, 2, 2,2, 10],
             'Days': [30, 30, 30, 30,30],
-            'Total_kg': [60, 60, 60,60 300]
+            'Total_kg': [60, 60, 60,60, 300]
         })
         
         september_expenses = pd.DataFrame({
