@@ -1057,16 +1057,18 @@ def display_expense_breakdown(analyzer):
     expense_melted = expense_df.reset_index().melt(id_vars='index', var_name='Month', value_name='Cost')
     expense_melted.columns = ['Category', 'Month', 'Cost']
     
-    fig = px.line(expense_melted, x='Month', y='Cost', color='Category',
-                 markers=True,
+    fig = px.bar(expense_melted, x='Month', y='Cost', color='Category',
+                 barmode='group',
                  color_discrete_sequence=px.colors.qualitative.Bold)
-    fig.update_traces(line=dict(width=3), marker=dict(size=10))
+    fig.update_traces(marker=dict(line=dict(color='white', width=1)))
     fig.update_layout(
         height=400,
         margin=dict(l=20, r=20, t=20, b=20),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        hovermode='x unified'
+        yaxis_title='Cost ($)',
+        xaxis_title='Month',
+        legend_title='Category'
     )
     st.plotly_chart(fig, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -1189,9 +1191,9 @@ def display_recommendations(analyzer):
         
         for i, (title, desc) in enumerate(recommendations, 1):
             st.markdown(f"""
-            <div style='background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea;'>
-                <strong style='color: white; font-size: 1.1em;'>{i}. {title}</strong><br>
-                <span style='color: rgba(255,255,255,0.8);'>{desc}</span>
+            <div style='background: rgba(255,255,255,0.8); padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #1976D2;'>
+                <strong style='color: #0D47A1; font-size: 1.1em;'>{i}. {title}</strong><br>
+                <span style='color: #424242;'>{desc}</span>
             </div>
             """, unsafe_allow_html=True)
         
@@ -1216,9 +1218,9 @@ def display_recommendations(analyzer):
         
         for label, value, emoji in metrics_data:
             st.markdown(f"""
-            <div style='background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;'>
-                <span style='color: white;'>{emoji} <strong>{label}</strong></span>
-                <span style='color: #667eea; font-weight: bold; font-size: 1.1em;'>{value}</span>
+            <div style='background: rgba(255,255,255,0.8); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;'>
+                <span style='color: #0D47A1;'>{emoji} <strong>{label}</strong></span>
+                <span style='color: #1976D2; font-weight: bold; font-size: 1.1em;'>{value}</span>
             </div>
             """, unsafe_allow_html=True)
         
@@ -1268,18 +1270,18 @@ def display_chatbot(analyzer, chatbot):
     st.markdown('<div class="section-header">🤖 CasaDeFo RAG Assistant</div>', unsafe_allow_html=True)
     
     st.markdown("""
-    <div style='background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px;'>
-        <h3 style='color: white; margin-top: 0;'>🧠 RAG-Powered Knowledge Assistant</h3>
-        <p style='color: rgba(255,255,255,0.9);'>
-            This assistant uses <strong>Retrieval-Augmented Generation (RAG)</strong> to search through:
+    <div style='background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 25px; border-radius: 15px; border: 2px solid #1976D2; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(25, 118, 210, 0.2);'>
+        <h3 style='color: #0D47A1; margin-top: 0; font-weight: 700;'>🧠 RAG-Powered Knowledge Assistant</h3>
+        <p style='color: #212121; font-size: 1rem;'>
+            This assistant uses <strong style='color: #1976D2;'>Retrieval-Augmented Generation (RAG)</strong> to search through:
         </p>
-        <ul style='color: rgba(255,255,255,0.8);'>
-            <li>📚 Uploaded Manuals from backend folder</li>
-            <li>💡 Pig Farming Knowledge Base - breeds, diseases, housing</li>
-            <li>📊 Your Project Data - expenses, feed, contributions</li>
+        <ul style='color: #212121; font-size: 1rem; line-height: 1.8;'>
+            <li><strong>📚 Uploaded Manuals</strong> from backend folder</li>
+            <li><strong>💡 Pig Farming Knowledge Base</strong> - breeds, diseases, housing</li>
+            <li><strong>📊 Your Project Data</strong> - expenses, feed, contributions</li>
         </ul>
-        <p style='color: rgba(255,255,255,0.9); margin-bottom: 0;'><strong>Try asking about:</strong></p>
-        <ul style='color: rgba(255,255,255,0.8); margin-bottom: 0;'>
+        <p style='color: #212121; margin-top: 20px; margin-bottom: 10px; font-size: 1rem;'><strong style='color: #1976D2;'>Try asking about:</strong></p>
+        <ul style='color: #424242; font-size: 0.95rem; line-height: 1.8; margin-bottom: 5px;'>
             <li>"What are the best pig breeds for commercial farming?"</li>
             <li>"How to prevent African Swine Fever?"</li>
             <li>"What are the housing requirements for pregnant sows?"</li>
