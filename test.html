@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .metrics-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        .metrics-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .metrics-header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .metrics-header p {
+            color: #7f8c8d;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        
+        .metrics-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        
+        .metric-card {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .metric-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 28px;
+            color: white;
+        }
+        
+        .metric-1 .metric-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .metric-2 .metric-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .metric-3 .metric-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .metric-title {
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .metric-description {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-note {
+            color: #95a5a6;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .metrics-grid {
+                flex-direction: column;
+            }
+            
+            .metric-card {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="metrics-container">
+        <div class="metrics-header">
+            <h1>Monthly Metrics Dashboard</h1>
+            <p>Key performance indicators for your operations</p>
+        </div>
+        
+        <div class="metrics-grid">
+            <!-- Monthly Average Card -->
+            <div class="metric-card metric-1">
+                <div class="metric-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="metric-title">Monthly Average</div>
+                <div class="metric-value">$744.00</div>
+                <div class="metric-description">Per Month</div>
+            </div>
+            
+            <!-- Feed Consumption Card -->
+            <div class="metric-card metric-2">
+                <div class="metric-icon">
+                    <i class="fas fa-weight"></i>
+                </div>
+                <div class="metric-title">Feed Consumption</div>
+                <div class="metric-value">3,271 kg</div>
+                <div class="metric-description">Total Feed</div>
+            </div>
+            
+            <!-- Team Contributions Card -->
+            <div class="metric-card metric-3">
+                <div class="metric-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="metric-title">Team Contributions</div>
+                <div class="metric-value">$1,775.50</div>
+                <div class="metric-description">Yami, Mike & Kali</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add a simple animation when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.metric-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>
