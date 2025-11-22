@@ -390,10 +390,10 @@ class CasaDeFoAnalyzer:
     def load_default_data(self):
         """Load default data structure"""
         september_feed = pd.DataFrame({
-            'Category': ['Pig 1 Pregnant', 'Pig 2 Pregnant', 'Dry Sow(2)', 'Weaners (20)'],
-            'Daily_Consumption_kg': [2, 2, 4, 10],
-            'Days': [30, 30, 30, 30],
-            'Total_kg': [60, 60, 120, 300]
+            'Category': ['A1', 'A2', 'A3','A4', 'Batch B (20)'],
+            'Daily_Consumption_kg': [2, 2, 2,2, 10],
+            'Days': [30, 30, 30, 30,30],
+            'Total_kg': [60, 60, 60,60 300]
         })
         
         september_expenses = pd.DataFrame({
@@ -414,10 +414,10 @@ class CasaDeFoAnalyzer:
         })
         
         october_feed = pd.DataFrame({
-            'Category': ['Pig 1 with Piglets', 'Pig 2 (Weaner)', 'Serviced gilts(2)', 
-                        'Bows & Soars (20)', 'Batch 1 Weaners(10)', 'Batch 2 Weaners(10)'],
-            'With_Piglets_kg': [55, 125, 0, 0, 0, 0],
-            'After_Weaning_kg': [40, 12, 124, 620, 100, 65],
+            'Category': ['A1', 'A2', 'A3','A4', 
+                        'Batch B', 'Batch C', 'Batch C)'],
+            'With_Piglets_kg': [55, 125, 0, 0, 0, 0,0],
+            'After_Weaning_kg': [40, 12, 62,62, 620, 100, 65],
             'Total_kg': [95, 137, 124, 620, 100, 65]
         })
         
@@ -440,8 +440,8 @@ class CasaDeFoAnalyzer:
         })
         
         november_feed = pd.DataFrame({
-            'Category': ['Serviced gilt 1', 'Serviced gilt 2', 'Serviced gilt 3', 
-                        'Serviced gilt 4', 'Weaners(20)', 'Boars & Sows(20)'],
+            'Category': ['A1', 'A2', 'A3', 
+                        'A4', 'Batch C', 'Batch B'],
             'KGs_Day': [2, 2, 2, 2, 0.5, 2],
             'Num_Pigs': [1, 1, 1, 1, 20, 20],
             'Days': [30, 30, 30, 30, 30, 30],
