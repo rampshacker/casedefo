@@ -418,6 +418,252 @@ class CasaDeFoAnalyzer:
             return self.load_default_data()
     
     def parse_excel_data(self, file_path):
+        """Parse Excel data from standardized sheet structure"""
+        try:
+            # Read all sheets from Excel file
+            excel_data = pd.read_excel(file_path, sheet_name=None)
+            
+            st.sidebar.info(f"📋 Found sheets: {', '.join(excel_data.keys())}")
+            
+            parsed_data = {}
+            
+            # Map of expected sheet names
+            sheet_mapping = {
+                'September': 'September Expenses',
+                'October': 'October Expenses',
+                'November': 'November Expenses'
+            }
+            
+            for month, sheet_name in sheet_mapping.items():
+                try:
+                    if sheet_name in excel_data:
+                        df = excel_data[sheet_name]
+                        st.sidebar.info(f"🔍 Processing {month}: {df.shape[0]} rows x {df.shape[1]} columns")
+                        
+                        # === FIND SECTION BOUNDARIES ===
+                        feed_header_row = None
+                        expense_header_row = None
+                        individual_header_row = None
+                        
+                        for idx in range(len(df)):
+                            row_str = ' '.join([str(val).lower().strip() for val in df.iloc[idx].values if pd.notna(val)])
+                            
+                            # Find feed calculation header
+                            if 'feed calculation' in row_str:
+                                feed_header_row = idx + 1  # Next row has column headers
+                            
+                            # Find projected expenses header
+                            elif 'projected expenses' in row_str or ('ratio' in row_str and 'tonne' in row_str):
+                                if expense_header_row is None:
+                                    expense_header_row = idx + 1 if 'projected' in row_str else idx
+                            
+                            # Find breakdown of expenses header
+                            elif 'breakdown' in row_str and 'expenses' in row_str:
+                                individual_header_row = idx + 1  # Next row has column headers
+                        
+                        st.sidebar.success(f"✓ Found sections - Feed: row {feed_header_row}, Expenses: row {expense_header_row}, Individuals: row {individual_header_row}")
+                        
+                        # === PARSE FEED DATA ===
+                        feed_df = pd.DataFrame(columns=['Category', 'Total_kg'])
+                        
+                        if feed_header_row is not None and expense_header_row is not None:
+                            # Extract feed section
+                            feed_section = df.iloc[feed_header_row:expense_header_row-1].copy()
+                            
+                            # First row is headers
+                            headers = [str(col).strip() for col in feed_section.iloc[0].values]
+                            
+                            # Find Category and Total (kg) columns
+                            category_col = None
+                            total_kg_col = None
+                            
+                            for idx, header in enumerate(headers):
+                                h_lower = header.lower()
+                                if h_lower == 'category':
+                                    category_col = idx
+                                elif 'total' in h_lower and 'kg' in h_lower:
+                                    total_kg_col = idx
+                            
+                            if category_col is not None and total_kg_col is not None:
+                                st.sidebar.info(f"📍 Feed - Category: col {category_col}, Total kg: col {total_kg_col}")
+                                
+                                # Parse data rows
+                                feed_records = []
+                                for idx in range(1, len(feed_section)):
+                                    row = feed_section.iloc[idx]
+                                    
+                                    # Skip Grand Total row
+                                    if pd.notna(row.iloc[0]) and 'grand total' in str(row.iloc[0]).lower():
+                                        break
+                                    
+                                    category = row.iloc[category_col]
+                                    total_kg = row.iloc[total_kg_col]
+                                    
+                                    if pd.notna(category) and pd.notna(total_kg):
+                                        try:
+                                            feed_records.append({
+                                                'Category': str(category).strip(),
+                                                'Total_kg': float(total_kg)
+                                            })
+                                        except (ValueError, TypeError):
+                                            continue
+                                
+                                feed_df = pd.DataFrame(feed_records)
+                                st.sidebar.success(f"✅ Parsed {len(feed_df)} feed items: {feed_df['Total_kg'].sum():.2f} kg total")
+                        
+                        # === PARSE EXPENSES DATA ===
+                        expense_df = pd.DataFrame(columns=['Item', 'Total_Cost'])
+                        
+                        if expense_header_row is not None and individual_header_row is not None:
+                            # Extract expense section
+                            expense_section = df.iloc[expense_header_row:individual_header_row-1].copy()
+                            
+                            # First row is headers
+                            headers = [str(col).strip() for col in expense_section.iloc[0].values]
+                            
+                            # First column is always item name, last column is Total
+                            item_col = 0
+                            total_col = len(headers) - 1
+                            
+                            st.sidebar.info(f"📍 Expenses - Item: col {item_col}, Total: col {total_col}")
+                            
+                            # Parse data rows
+                            expense_records = []
+                            for idx in range(1, len(expense_section)):
+                                row = expense_section.iloc[idx]
+                                
+                                item = row.iloc[item_col]
+                                
+                                # Skip total row
+                                if pd.notna(item):
+                                    item_str = str(item).lower()
+                                    if 'total' in item_str and ('projected' in item_str or 'expenses' in item_str):
+                                        break
+                                
+                                if pd.notna(item):
+                                    # Get last numeric column value
+                                    total_cost = None
+                                    for col_idx in range(len(row)-1, -1, -1):
+                                        try:
+                                            val = float(row.iloc[col_idx])
+                                            if pd.notna(val) and val > 0:
+                                                total_cost = val
+                                                break
+                                        except (ValueError, TypeError):
+                                            continue
+                                    
+                                    if total_cost is not None:
+                                        expense_records.append({
+                                            'Item': str(item).strip(),
+                                            'Total_Cost': total_cost
+                                        })
+                            
+                            expense_df = pd.DataFrame(expense_records)
+                            total_exp = expense_df['Total_Cost'].sum() if not expense_df.empty else 0
+                            st.sidebar.success(f"✅ Parsed {len(expense_df)} expenses: ${total_exp:.2f} total")
+                        
+                        # === PARSE INDIVIDUAL CONTRIBUTIONS ===
+                        individual_df = pd.DataFrame(columns=['Category', 'Yami', 'Mike', 'Kali'])
+                        
+                        if individual_header_row is not None:
+                            # Extract individual section
+                            individual_section = df.iloc[individual_header_row:].copy()
+                            
+                            # First row is headers
+                            headers = [str(col).strip() for col in individual_section.iloc[0].values]
+                            
+                            # Find Yami, Mike, Kali columns
+                            yami_col = None
+                            mike_col = None
+                            kali_col = None
+                            
+                            for idx, header in enumerate(headers):
+                                h_lower = header.lower()
+                                if h_lower == 'yami':
+                                    yami_col = idx
+                                elif h_lower == 'mike':
+                                    mike_col = idx
+                                elif h_lower == 'kali':
+                                    kali_col = idx
+                            
+                            if yami_col is not None and mike_col is not None:
+                                st.sidebar.info(f"📍 Individuals - Yami: col {yami_col}, Mike: col {mike_col}, Kali: col {kali_col}")
+                                
+                                # Parse data rows
+                                individual_records = []
+                                for idx in range(1, len(individual_section)):
+                                    row = individual_section.iloc[idx]
+                                    
+                                    category = row.iloc[0]
+                                    
+                                    # Skip expense contribution per individual row
+                                    if pd.notna(category):
+                                        cat_str = str(category).lower()
+                                        if 'expense contribution' in cat_str or 'per individual' in cat_str:
+                                            break
+                                    
+                                    if pd.notna(category):
+                                        try:
+                                            yami_val = float(row.iloc[yami_col]) if pd.notna(row.iloc[yami_col]) else 0
+                                            mike_val = float(row.iloc[mike_col]) if pd.notna(row.iloc[mike_col]) else 0
+                                            kali_val = float(row.iloc[kali_col]) if kali_col and pd.notna(row.iloc[kali_col]) else 0
+                                            
+                                            individual_records.append({
+                                                'Category': str(category).strip(),
+                                                'Yami': yami_val,
+                                                'Mike': mike_val,
+                                                'Kali': kali_val
+                                            })
+                                        except (ValueError, TypeError, IndexError):
+                                            continue
+                                
+                                individual_df = pd.DataFrame(individual_records)
+                                y_total = individual_df['Yami'].sum()
+                                m_total = individual_df['Mike'].sum()
+                                k_total = individual_df['Kali'].sum()
+                                st.sidebar.success(f"✅ Parsed {len(individual_df)} contributions - Yami: ${y_total:.2f}, Mike: ${m_total:.2f}, Kali: ${k_total:.2f}")
+                        
+                        # Store parsed data
+                        parsed_data[month] = {
+                            'feed': feed_df,
+                            'expenses': expense_df,
+                            'individuals': individual_df
+                        }
+                        
+                        st.sidebar.success(f"✅✅✅ Successfully loaded {month}!")
+                    else:
+                        st.sidebar.warning(f"⚠️ Sheet '{sheet_name}' not found")
+                        
+                except Exception as month_error:
+                    st.sidebar.error(f"❌ Error parsing {month}: {str(month_error)}")
+                    import traceback
+                    st.sidebar.code(traceback.format_exc(), language='python')
+                    continue
+            
+            # Return parsed data or fallback
+            if parsed_data:
+                st.sidebar.success(f"🎉 Successfully loaded {len(parsed_data)} month(s)!")
+                
+                # Fill missing months
+                for month in ['September', 'October', 'November']:
+                    if month not in parsed_data:
+                        parsed_data[month] = {
+                            'feed': pd.DataFrame(columns=['Category', 'Total_kg']),
+                            'expenses': pd.DataFrame(columns=['Item', 'Total_Cost']),
+                            'individuals': pd.DataFrame(columns=['Category', 'Yami', 'Mike', 'Kali'])
+                        }
+                        st.sidebar.info(f"ℹ️ No data for {month}")
+                
+                return parsed_data
+            else:
+                st.sidebar.error("❌ No valid data - using fallback")
+                return self.load_default_data()
+                
+        except Exception as e:
+            st.sidebar.error(f"❌ Critical error: {str(e)}")
+            import traceback
+            st.sidebar.code(traceback.format_exc(), language='python')
+            return self.load_default_data()
         """Parse Excel data from backend file with your exact sheet structure"""
         try:
             # Read all sheets from Excel file
@@ -476,79 +722,74 @@ class CasaDeFoAnalyzer:
                         st.sidebar.info(f"📍 Sections: Feed(0-{feed_end}), Expense({expense_start}-{expense_end}), Individual({individual_start}+)")
                         
                         # === PARSE FEED DATA ===
-                        if feed_end is not None and feed_end > 0:
+                        if feed_end is not None and feed_end > 1:
                             feed_section = df.iloc[:feed_end].copy()
                             st.sidebar.info(f"📊 Feed section: rows 0 to {feed_end}")
                             
-                            # Find header row
+                            # Find header row - look for "Category" column
                             header_row_idx = None
-                            for idx in range(len(feed_section)):
+                            category_col_idx = None
+                            total_kg_col_idx = None
+                            
+                            for idx in range(min(10, len(feed_section))):  # Check first 10 rows
                                 row = feed_section.iloc[idx]
-                                # Check if this row contains "Category" header
-                                for val in row.values:
+                                for col_idx, val in enumerate(row.values):
                                     if pd.notna(val) and str(val).strip().lower() == 'category':
                                         header_row_idx = idx
+                                        category_col_idx = col_idx
+                                        # Find Total (kg) column - usually the last column
+                                        for search_idx in range(len(row) - 1, -1, -1):
+                                            search_val = str(row.iloc[search_idx]).lower()
+                                            if 'total' in search_val and 'kg' in search_val:
+                                                total_kg_col_idx = search_idx
+                                                break
                                         break
                                 if header_row_idx is not None:
                                     break
                             
-                            if header_row_idx is not None:
-                                st.sidebar.success(f"✓ Found feed header at row {header_row_idx}")
+                            if header_row_idx is not None and category_col_idx is not None:
+                                st.sidebar.success(f"✓ Found feed header at row {header_row_idx}, Category: col {category_col_idx}, Total kg: col {total_kg_col_idx}")
                                 
-                                # Get column names from header row
-                                headers = feed_section.iloc[header_row_idx].values
+                                # If Total kg column not found, use last column
+                                if total_kg_col_idx is None:
+                                    total_kg_col_idx = len(feed_section.columns) - 1
+                                    st.sidebar.info(f"Using last column ({total_kg_col_idx}) for Total kg")
                                 
-                                # Find Category and Total (kg) column indices
-                                category_col_idx = None
-                                total_kg_col_idx = None
-                                
-                                for idx, header in enumerate(headers):
-                                    if pd.notna(header):
-                                        header_str = str(header).strip().lower()
-                                        if header_str == 'category':
-                                            category_col_idx = idx
-                                        elif 'total' in header_str and 'kg' in header_str:
-                                            total_kg_col_idx = idx
-                                
-                                st.sidebar.info(f"📍 Category column: {category_col_idx}, Total kg column: {total_kg_col_idx}")
-                                
-                                # Extract data rows (after header)
+                                # Extract data rows (after header, before feed_end)
                                 feed_data = feed_section.iloc[header_row_idx + 1:].copy()
                                 feed_data = feed_data.dropna(how='all').reset_index(drop=True)
                                 
                                 feed_records = []
                                 for idx, row in feed_data.iterrows():
-                                    row_str = ' '.join([str(v).lower() for v in row.values if pd.notna(v)])
-                                    
                                     # Skip Grand Total rows
-                                    if 'grand total' in row_str:
+                                    first_cell = str(row.iloc[0]).lower() if pd.notna(row.iloc[0]) else ""
+                                    if 'grand total' in first_cell:
                                         continue
                                     
-                                    # Get values from correct columns
-                                    if category_col_idx is not None and total_kg_col_idx is not None:
-                                        category = row.iloc[category_col_idx]
-                                        total_kg = row.iloc[total_kg_col_idx]
-                                        
-                                        if pd.notna(category) and str(category).strip():
-                                            try:
-                                                total_kg_val = float(total_kg) if pd.notna(total_kg) else 0
-                                                category_str = str(category).strip()
-                                                
-                                                feed_records.append({
-                                                    'Category': category_str,
-                                                    'Total_kg': total_kg_val
-                                                })
-                                            except (ValueError, TypeError) as e:
-                                                st.sidebar.warning(f"⚠️ Skipped feed row {idx}: {e}")
-                                                continue
+                                    # Get category and total kg
+                                    category = row.iloc[category_col_idx] if category_col_idx < len(row) else None
+                                    total_kg = row.iloc[total_kg_col_idx] if total_kg_col_idx < len(row) else None
+                                    
+                                    if pd.notna(category) and str(category).strip():
+                                        try:
+                                            total_kg_val = float(total_kg) if pd.notna(total_kg) else 0
+                                            category_str = str(category).strip()
+                                            
+                                            feed_records.append({
+                                                'Category': category_str,
+                                                'Total_kg': total_kg_val
+                                            })
+                                        except (ValueError, TypeError) as e:
+                                            st.sidebar.warning(f"⚠️ Skipped feed row {idx}: {e}")
+                                            continue
                                 
                                 feed_df = pd.DataFrame(feed_records)
-                                st.sidebar.success(f"✅ Parsed {len(feed_df)} feed items")
+                                st.sidebar.success(f"✅ Parsed {len(feed_df)} feed items: {', '.join(feed_df['Category'].head(3).tolist())}...")
                             else:
-                                st.sidebar.warning("⚠️ Could not find feed header row")
+                                st.sidebar.warning(f"⚠️ Could not find feed header (Category column)")
                                 feed_df = pd.DataFrame(columns=['Category', 'Total_kg'])
                         else:
-                            st.sidebar.warning("⚠️ Could not find feed section end")
+                            st.sidebar.warning(f"⚠️ Feed section too small or not found (feed_end={feed_end})")
                             feed_df = pd.DataFrame(columns=['Category', 'Total_kg'])
                         
                         # === PARSE EXPENSES DATA ===
