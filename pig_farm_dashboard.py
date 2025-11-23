@@ -31,6 +31,45 @@ st.markdown("""
         background-attachment: fixed;
     }
     
+    /* Mobile-responsive adjustments */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem !important;
+            letter-spacing: -1px !important;
+        }
+        
+        .section-header {
+            font-size: 1.5rem !important;
+        }
+        
+        .metric-card {
+            padding: 1rem !important;
+            margin: 5px 0 !important;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem !important;
+        }
+        
+        .metric-title {
+            font-size: 0.65rem !important;
+        }
+        
+        .chart-container {
+            padding: 1rem !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .main-header {
+            font-size: 1.5rem !important;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem !important;
+        }
+    }
+    
     .main-header {
         font-size: 3.5rem;
         background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%);
